@@ -65,19 +65,26 @@ class _HomePageState extends State<HomePage> {
               itemBuilder: (context, index) {
                 final DocumentSnapshot documentSnapshot =
                     snapshot.data!.docs[index];
-                return Card(
-                  margin: const EdgeInsets.all(8.0),
-                  child: ListTile(
-                    title: Text(documentSnapshot['name']),
-                    subtitle: Text("\$${documentSnapshot['price'].toString()}"),
-                    trailing: SizedBox(
-                      width: 100,
-                      child: Row(
-                        children: [
-                          IconButton(
-                              onPressed: () => _update(documentSnapshot),
-                              icon: const Icon(Icons.edit)),
-                        ],
+                return Dismissible(
+                  key: Key(documentSnapshot.id),
+                  onDismissed: (direction) async {
+                    await _products.doc(documentSnapshot.id).delete();
+                  },
+                  child: Card(
+                    margin: const EdgeInsets.all(8.0),
+                    child: ListTile(
+                      title: Text(documentSnapshot['name']),
+                      subtitle:
+                          Text("\$${documentSnapshot['price'].toString()}"),
+                      trailing: SizedBox(
+                        width: 100,
+                        child: Row(
+                          children: [
+                            IconButton(
+                                onPressed: () => _update(documentSnapshot),
+                                icon: const Icon(Icons.edit)),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -133,22 +140,36 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () async {
-                    final String name = _nameController.text;
-                    final int price =
-                        int.tryParse(_priceController.text) as int;
-                    if (price != null) {
-                      await _products.doc(documentSnapshot!.id).update({
-                        'name': name,
-                        'price': price,
-                      });
-                      _nameController.clear();
-                      _priceController.clear();
-                      Navigator.pop(context);
-                    }
-                  },
-                  child: const Text('Update'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () async {
+                        final String name = _nameController.text;
+                        final int price =
+                            int.tryParse(_priceController.text) as int;
+                        if (price != null) {
+                          await _products.doc(documentSnapshot!.id).update({
+                            'name': name,
+                            'price': price,
+                          });
+                          _nameController.clear();
+                          _priceController.clear();
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: const Text('Update'),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () async {
+                        _nameController.clear();
+                        _priceController.clear();
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Cancel'),
+                    ),
+                  ],
                 ),
               ],
             ),
