@@ -40,15 +40,10 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Products'),
+        title: const Text('Products Management'),
         actions: [
           IconButton(
-            onPressed: () async {
-              await _products.add({
-                'name': 'Product 1',
-                'price': 100,
-              });
-            },
+            onPressed: () => _update(null),
             icon: const Icon(Icons.add),
           ),
         ],
@@ -66,7 +61,14 @@ class _HomePageState extends State<HomePage> {
                 final DocumentSnapshot documentSnapshot =
                     snapshot.data!.docs[index];
                 return Dismissible(
+                  direction: DismissDirection.endToStart,
                   key: Key(documentSnapshot.id),
+                  background: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20.0),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
                   onDismissed: (direction) async {
                     await _products.doc(documentSnapshot.id).delete();
                   },
@@ -77,7 +79,7 @@ class _HomePageState extends State<HomePage> {
                       subtitle:
                           Text("\$${documentSnapshot['price'].toString()}"),
                       trailing: SizedBox(
-                        width: 100,
+                        width: 50,
                         child: Row(
                           children: [
                             IconButton(
@@ -105,9 +107,10 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _priceController = TextEditingController();
   _update(DocumentSnapshot? documentSnapshot) async {
     if (documentSnapshot != null) {
-      _nameController.text = documentSnapshot!['name'];
+      _nameController.text = documentSnapshot['name'];
       _priceController.text = documentSnapshot['price'].toString();
     }
+    final buttonText = documentSnapshot == null ? "Add" : "Update";
 
     await showModalBottomSheet(
         isScrollControlled: true,
@@ -144,21 +147,33 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                      ),
                       onPressed: () async {
                         final String name = _nameController.text;
                         final int price =
                             int.tryParse(_priceController.text) as int;
+
                         if (price != null) {
-                          await _products.doc(documentSnapshot!.id).update({
-                            'name': name,
-                            'price': price,
-                          });
+                          if (documentSnapshot == null) {
+                            await _products.add({
+                              'name': name,
+                              'price': price,
+                            });
+                          } else {
+                            await _products.doc(documentSnapshot!.id).update({
+                              'name': name,
+                              'price': price,
+                            });
+                          }
                           _nameController.clear();
                           _priceController.clear();
                           Navigator.pop(context);
                         }
                       },
-                      child: const Text('Update'),
+                      child: Text(buttonText),
                     ),
                     const SizedBox(width: 10),
                     ElevatedButton(
